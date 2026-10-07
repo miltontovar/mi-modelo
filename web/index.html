@@ -6,10 +6,10 @@
 <!-- Privacidad: el navegador bloquea cualquier conexión saliente (fetch, XHR, WebSocket, beacon)
      y el envío de formularios. Funciona en GitHub Pages y al abrir el archivo directamente. -->
 <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'">
-<title>Predictor Saber 11</title>
-<meta name="description" content="Modelo de Machine Learning que estima el puntaje global de Saber 11 a partir del contexto del hogar y del colegio. Se calcula en tu navegador; no envía datos a ningún servidor.">
-<meta property="og:title" content="Predictor Saber 11">
-<meta property="og:description" content="¿Cuánto pesa el contexto en el puntaje del Saber 11? Un modelo lineal entrenado con resultados reales del ICFES, calculado en tu navegador.">
+<title>Riesgo de oferente único en SECOP II</title>
+<meta name="description" content="Modelo de Machine Learning que estima la probabilidad de que un proceso TIC de SECOP II termine con un solo oferente. Se calcula en tu navegador; no envía datos a ningún servidor.">
+<meta property="og:title" content="Riesgo de oferente único en SECOP II">
+<meta property="og:description" content="¿Qué tan probable es que un proceso TIC termine con un solo oferente? Un modelo lineal entrenado con datos abiertos de SECOP II, calculado en tu navegador.">
 <meta property="og:type" content="website">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f3f5f8" media="(prefers-color-scheme: light)">
@@ -556,10 +556,10 @@
         <ul class="leyenda" aria-hidden="true">
           <li><span class="clave clave-punto"></span>Estimación</li>
           <li><span class="clave clave-promedio"></span><span id="leyenda-promedio">Promedio nacional</span></li>
-          <li><span class="clave clave-rango"></span>Rango aproximado</li>
+          <li id="leyenda-rango"><span class="clave clave-rango"></span>Rango aproximado</li>
         </ul>
         <dl class="cifras">
-          <div class="cifra">
+          <div class="cifra" id="bloque-rango">
             <dt>Rango aproximado</dt>
             <dd class="valor" id="cifra-rango">–</dd>
             <dd class="nota" id="nota-rango">± el error absoluto medio</dd>
@@ -662,7 +662,7 @@
 
     <section class="seccion" id="verificacion" aria-labelledby="verificacion-titulo">
       <h2 class="seccion-titulo" id="verificacion-titulo">Verificación en tu navegador</h2>
-      <p class="seccion-intro">Estos 5 estudiantes del set de prueba no se usaron para entrenar. La tabla compara la predicción de scikit-learn (Python) con la que calcula esta página (JavaScript). Deben coincidir.</p>
+      <p class="seccion-intro">Estos 5 procesos del set de prueba no se usaron para entrenar. La tabla compara la predicción de scikit-learn (Python) con la que calcula esta página (JavaScript). Deben coincidir.</p>
       <p class="estado-verificacion"><span class="chip" id="estado-verificacion">Verificando…</span></p>
       <div class="contenedor-tabla">
         <table>
@@ -865,8 +865,9 @@
     $('texto-entrada').textContent = T.entrada || ('Responde ' + M.variables.length + ' preguntas. Un modelo de ' +
       DESCRIPCION_MODELO + ', entrenado con ' + f0.format(M.n_entrenamiento) + ' registros, calcula una estimación de ' +
       primeraMinuscula(M.objetivo.etiqueta) + ' y muestra qué suma y qué resta cada respuesta.');
-    $('texto-etico').textContent = (T.aviso_etico || 'Es una estimación con error.') + ' En promedio se equivoca por ' +
-      f0.format(MAE) + ' ' + UNIDAD + '.';
+    // Con un objetivo de sí o no, el valor real es 0 o 100: un error promedio en % se malinterpreta.
+    $('texto-etico').textContent = (T.aviso_etico || 'Es una estimación con error.') + (PROBABILIDAD ? '' :
+      ' En promedio se equivoca por ' + f0.format(MAE) + ' ' + UNIDAD + '.');
     $('titulo-resultado').textContent = T.etiqueta_resultado || ('Estimación de ' + primeraMinuscula(M.objetivo.etiqueta));
     $('th-columna').textContent = 'Columna de los datos';
     $('th-real').textContent = 'Valor real';
@@ -874,8 +875,11 @@
     $('texto-recordatorio').textContent = T.recordatorio || 'Es una estimación con error, no un valor exacto.';
     $('leyenda-suma').textContent = 'Suma';
     $('leyenda-resta').textContent = 'Resta';
-    $('texto-cobertura').textContent = 'En el set de prueba, el valor real quedó dentro de ese rango en el ' +
-      fPct.format(M.cobertura_mae) + ' de los casos.';
+    $('texto-cobertura').textContent = PROBABILIDAD
+      ? 'Es la probabilidad promedio para procesos con este perfil. No dice si este proceso en particular ' +
+        'tendrá uno o varios oferentes: cada proceso termina con uno (100) o con varios (0).'
+      : 'En el set de prueba, el valor real quedó dentro de ese rango en el ' +
+        fPct.format(M.cobertura_mae) + ' de los casos.';
   } else {
     $('texto-periodo').textContent = 'Saber 11 · periodo ' + M.periodo_etiqueta + ' · datos abiertos del ICFES';
     $('chip-periodo').textContent = 'Periodo ' + M.periodo_etiqueta;
@@ -906,6 +910,10 @@
   $('leyenda-promedio').textContent = ETIQ_PROM;
   $('dt-promedio').textContent = 'Frente al ' + primeraMinuscula(ETIQ_PROM);
   $('nota-rango').textContent = '± ' + f0.format(MAE) + ' ' + UNIDAD + ', el error absoluto medio (MAE) en el set de prueba';
+  if (PROBABILIDAD) {  // el rango ± MAE no tiene sentido cuando el valor real solo puede ser 0 o 100
+    $('leyenda-rango').hidden = true;
+    $('bloque-rango').hidden = true;
+  }
   $('nota-promedio').textContent = ETIQ_PROM + (M.periodo ? ' del periodo' : '') + ': ' + f1.format(M.promedio_nacional);
   if (ARBOLES) {
     $('texto-aportes').textContent = 'El modelo parte de ' + f1.format(PARTIDA) + ' ' + UNIDAD + ' (el promedio de ' +
@@ -1181,7 +1189,7 @@
   var idAnimacion = 0;
   function pintarMedidor(v) {
     relleno.setAttribute('d', v - MIN > 0.5 ? arco(MIN, v, G.r) : '');
-    rango.setAttribute('d', arco(Math.max(MIN, v - MAE), Math.min(MAX, v + MAE), G.r + 18));
+    rango.setAttribute('d', PROBABILIDAD ? '' : arco(Math.max(MIN, v - MAE), Math.min(MAX, v + MAE), G.r + 18));
     var p = punto(v, G.r);
     punta.setAttribute('cx', p[0].toFixed(2));
     punta.setAttribute('cy', p[1].toFixed(2));
@@ -1405,7 +1413,7 @@
     suma.appendChild(crear('strong', null, 'estimación ' + f1.format(estimacion)));
 
     var descripcion = 'Estimación: ' + f0.format(mostrada) + ' ' + UNIDAD + ', en una escala de ' + f0.format(MIN) +
-      ' a ' + f0.format(MAX) + '. Rango aproximado de ' + f0.format(desde) + ' a ' + f0.format(hasta) + '. ' +
+      ' a ' + f0.format(MAX) + '. ' + (PROBABILIDAD ? '' : 'Rango aproximado de ' + f0.format(desde) + ' a ' + f0.format(hasta) + '. ') +
       ETIQ_PROM + ': ' + f0.format(M.promedio_nacional) + '.';
     $('medidor-descripcion').textContent = descripcion;
     clearTimeout(temporizadorAnuncio);
