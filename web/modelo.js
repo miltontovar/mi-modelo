@@ -72,7 +72,7 @@ window.MODELO = {
         "nombre": "Bosque aleatorio (50 árboles)",
         "mae": 38.091628706742526,
         "rmse": 43.09580080598726,
-        "r2": 0.14575092610072138,
+        "r2": 0.14575092610072127,
         "exactitud": 0.7244775402354071
       },
       {
@@ -1000,7 +1000,7 @@ window.MODELO = {
     "titulo": "Riesgo de oferente único en SECOP II",
     "subtitulo": "Machine Learning 1 · Universidad EAN",
     "pregunta": "¿Qué tan probable es que un proceso TIC termine con un solo oferente?",
-    "aviso_etico": "Una probabilidad alta de oferente único no significa que convenga participar: puede indicar requisitos hechos a la medida. Revise el pliego antes de decidir. El modelo muestra asociaciones, no causas, y no sirve para señalar entidades ni regiones.",
+    "aviso_etico": "Una probabilidad alta no significa que convenga participar: puede indicar requisitos hechos a la medida, así que revise el pliego antes de decidir. El modelo muestra asociaciones, no causas. El departamento refleja diferencias históricas del mercado en cada región, no la conducta de sus entidades.",
     "etiqueta_promedio": "Promedio de los datos",
     "subetiqueta_medidor": "% de probabilidad",
     "autor": "Milton Andrés Tovar Bonilla",
